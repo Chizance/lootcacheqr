@@ -1,0 +1,129 @@
+# Setup guide
+
+Everything you need to get Storage Inventory running: accounts, database, hosting, and your Claude API key. Do these roughly in order — later steps depend on earlier ones.
+
+## What you'll end up with
+
+- **GitHub** — hosts your code and serves the app for free via GitHub Pages.
+- **Supabase** — free hosted Postgres database + auth + file storage + the serverless function that talks to Claude.
+- **Anthropic** — the Claude API key that powers the optional "scan a box" feature.
+
+None of this costs anything except the Claude API calls you explicitly trigger by tapping "Scan box" (a few tenths of a cent each — see [docs/CLAUDE_API_KEY.md](./CLAUDE_API_KEY.md)).
+
+---
+
+## 1. Create your Supabase project
+
+1. Go to [supabase.com](https://supabase.com) and sign up (GitHub login is easiest).
+2. Click **New project**. Pick any name (e.g. "storage-inventory"), generate/save a database password somewhere safe, pick a region near you, and create it. It takes a minute or two to provision.
+3. Once it's ready, go to **Project Settings > Data API** (left sidebar, gear icon). Copy:
+   - **Project URL** → this is `VITE_SUPABASE_URL`
+   - **anon public** key (NOT `service_role`) → this is `VITE_SUPABASE_ANON_KEY`
+
+### Run the database schema
+
+1. In the Supabase dashboard, open **SQL Editor** (left sidebar).
+2. Click **New query**.
+3. Open [`supabase/schema.sql`](../supabase/schema.sql) in this repo, copy the whole file, paste it into the SQL editor, and click **Run**.
+4. This creates the `locations` and `bins` tables, turns on Row Level Security (so only signed-in users can read/write), and enables realtime sync.
+
+### Create the photo storage bucket
+
+1. Go to **Storage** (left sidebar) > **New bucket**.
+2. Name it exactly `bin-photos`.
+3. Leave **Public bucket** switched **off** — keep it private. The app accesses it through your logged-in session, not a public URL.
+4. Create it. The storage access policies for this bucket were already created by `schema.sql` in the previous step (the bottom section of that file).
+
+### Turn off email confirmation (optional, recommended for 2 users)
+
+By default Supabase requires clicking a confirmation link before a new account can sign in. For a 2-person personal app this is just friction. To skip it:
+
+1. Go to **Authentication > Providers > Email**.
+2. Turn off **Confirm email**.
+3. Save.
+
+If you'd rather keep it on, just check your inbox after creating each account in the app.
+
+### Create your two accounts
+
+You don't need to do this here — you'll create them right in the app the first time you open it (there's a "Create account" link on the login screen). Do this once you and your partner both have the app deployed (step 3 below).
+
+---
+
+## 2. Set up your Claude API key
+
+Follow [docs/CLAUDE_API_KEY.md](./CLAUDE_API_KEY.md) now — it walks through getting the key from the Anthropic Console and installing the Supabase CLI to deploy the Edge Function that uses it. Come back here once that's done.
+
+---
+
+## 3. Configure local development
+
+1. In this project folder, copy the example env file:
+   ```
+   cp .env.example .env
+   ```
+   (PowerShell: `Copy-Item .env.example .env`)
+2. Open `.env` and paste in your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from step 1.
+3. Install dependencies and start the dev server:
+   ```
+   npm install
+   npm run dev
+   ```
+4. Open the printed `localhost` URL. You should see the login screen. Create your account, then your partner's.
+
+`.env` is in `.gitignore` — it will never be committed. Only you (and anyone with local access to this folder) can see it.
+
+---
+
+## 4. Deploy to GitHub Pages
+
+The repo already has a GitHub Actions workflow ([`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)) that builds and deploys the app automatically every time you push to `main`. You just need to give it your Supabase values and turn on Pages once.
+
+### Add your Supabase values as repo secrets
+
+1. On GitHub, go to your repo > **Settings > Secrets and variables > Actions**.
+2. Click **New repository secret** twice, adding:
+   - `VITE_SUPABASE_URL` = your Project URL
+   - `VITE_SUPABASE_ANON_KEY` = your anon public key
+3. These are encrypted by GitHub and only readable by your own workflow runs — this is the standard, safe way to give a public repo's build process values that shouldn't be hardcoded in tracked files. (They're not secret in the sense of "must never be seen" — the anon key ends up in your built JS bundle either way, per the note in `.env.example` — but keeping them as repo secrets means you never have to hardcode them into a committed file.)
+
+### Turn on GitHub Pages
+
+1. Repo **Settings > Pages**.
+2. Under **Build and deployment > Source**, choose **GitHub Actions**.
+3. That's it — no branch to pick, the workflow handles building and publishing.
+
+### Push and watch it deploy
+
+Once you push your first commit (see [docs/GIT_WORKFLOW.md](./GIT_WORKFLOW.md)), go to the **Actions** tab on GitHub to watch the "Deploy to GitHub Pages" workflow run. When it finishes, your app is live at:
+
+```
+https://4568jonny-cell.github.io/storage-inventory/
+```
+
+Open that on your phone and **add it to your home screen** (Safari: Share > Add to Home Screen; Android Chrome: menu > Install app / Add to Home screen) — that's what makes it launch full-screen like a real app instead of opening in a browser tab.
+
+---
+
+## 5. Deploy the Claude photo-extraction function
+
+This is covered in detail in [docs/CLAUDE_API_KEY.md](./CLAUDE_API_KEY.md), but in short:
+
+```
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase functions deploy extract-items
+```
+
+---
+
+## Ongoing workflow
+
+Day to day, you won't touch most of this again. When you want to change the app:
+
+1. Edit code locally, test with `npm run dev`.
+2. Commit and push (see [docs/GIT_WORKFLOW.md](./GIT_WORKFLOW.md)).
+3. GitHub Actions rebuilds and redeploys automatically within a minute or two.
+
+Database schema changes (if you ever add one) go through the Supabase SQL Editor the same way you ran `schema.sql`. Edge Function changes need a re-run of `supabase functions deploy extract-items`.
