@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// GitHub Pages serves this repo at https://4568jonny-cell.github.io/storage-inventory/
+// GitHub Pages serves this repo at https://chizance.github.io/storage-inventory/
 // so every asset URL needs that subpath prefix — Vite's `base` handles this everywhere
 // except the manifest, which we set separately below with the same prefix.
 const BASE_PATH = '/storage-inventory/'

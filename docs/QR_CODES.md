@@ -7,7 +7,7 @@ Every bin gets a QR code automatically — there's nothing to set up. Here's how
 Each bin has a permanent ID the moment it's created. Its QR code encodes a URL like:
 
 ```
-https://4568jonny-cell.github.io/storage-inventory/#/bin/<bin-id>
+https://chizance.github.io/storage-inventory/#/bin/<bin-id>
 ```
 
 Scanning it with your phone's normal camera app opens that URL. If the Storage Inventory PWA is installed on your home screen, most phones will offer to open it in the app; otherwise it opens in your browser — either way it lands directly on that bin's record.

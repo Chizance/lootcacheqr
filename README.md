@@ -37,5 +37,5 @@ See [docs/SETUP.md](./docs/SETUP.md) if you haven't created your Supabase projec
 Pushing to `main` triggers an automatic build + deploy via GitHub Actions (see `.github/workflows/deploy.yml`). Live at:
 
 ```
-https://4568jonny-cell.github.io/storage-inventory/
+https://chizance.github.io/storage-inventory/
 ```
