@@ -34,19 +34,28 @@ None of this costs anything except the Claude API calls you explicitly trigger b
 3. Leave **Public bucket** switched **off** — keep it private. The app accesses it through your logged-in session, not a public URL.
 4. Create it. The storage access policies for this bucket were already created by `schema.sql` in the previous step (the bottom section of that file).
 
-### Turn off email confirmation (optional, recommended for 2 users)
+### Lock down who can sign up (recommended)
 
-By default Supabase requires clicking a confirmation link before a new account can sign in. For a 2-person personal app this is just friction. To skip it:
+By default, the login screen's "Create account" link lets **anyone who finds your site's URL** self-register — and once logged in, they'd have full read/write access to your entire inventory (see "What is Row Level Security" note below for why). Since your Project URL and anon key are visible to anyone who views your site's source, "nobody else knows the URL" isn't real protection.
+
+The fix is to disable public self-signup entirely and create accounts yourself from the dashboard instead:
 
 1. Go to **Authentication > Providers > Email**.
-2. Turn off **Confirm email**.
-3. Save.
+2. Turn off **"Allow new users to sign up."** Save.
+3. Go to **Authentication > Users > Add user > Create new user**.
+4. Enter the email and a password for yourself, and check **"Auto Confirm User"** (this skips the confirmation-email step entirely — no need for the SQL workaround from earlier).
+5. Repeat for your partner (and anyone else you deliberately choose to grant access to later).
 
-If you'd rather keep it on, just check your inbox after creating each account in the app.
+With this on, the "Create account" link in the app will just fail with an error if anyone else tries it — which is the point.
 
-### Create your two accounts
+### A few more one-time security toggles
 
-You don't need to do this here — you'll create them right in the app the first time you open it (there's a "Create account" link on the login screen). Do this once you and your partner both have the app deployed (step 3 below).
+Two more quick wins in the dashboard, both flagged by Supabase's built-in security advisor (**Database > Security Advisor** — this list is worth revisiting occasionally):
+
+- **"Leaked password protection"** — this one turns out to be a paid-plan-only feature on Supabase (not available on the free tier), so skip it. Not worth upgrading for on a personal 2-person app — just use a normal, non-trivial password for each account and this is a non-issue in practice.
+- If you already ran `supabase/schema.sql` before this doc was updated, **re-run it** (SQL Editor, same as before — it's safe to run multiple times) to pick up a fix for a flagged database function that didn't pin its search path.
+
+**About the "RLS Policy Always True" warning:** the advisor will also flag that `bins` and `locations` allow any signed-in user to read/write any row, with no per-user restriction. This one's intentional, not a bug — the whole point of this app is that you and your partner (or whoever you explicitly add above) share one inventory. Supabase's linter is a generic scanner tuned for multi-tenant apps, where that pattern usually *is* a mistake; here, combined with closed signup, "any logged-in user has full access" is exactly the intended trust model, so it's safe to leave as-is. If you ever add someone you don't want having full edit access, that's the point where this policy would need to become more restrictive.
 
 ---
 
@@ -69,7 +78,7 @@ Follow [docs/CLAUDE_API_KEY.md](./CLAUDE_API_KEY.md) now — it walks through ge
    npm install
    npm run dev
    ```
-4. Open the printed `localhost` URL. You should see the login screen. Create your account, then your partner's.
+4. Open the printed `localhost` URL. You should see the login screen — sign in with the account you already created (local dev and your deployed site share the exact same Supabase project, so there's nothing separate to set up here; one account works in both places).
 
 `.env` is in `.gitignore` — it will never be committed. Only you (and anyone with local access to this folder) can see it.
 

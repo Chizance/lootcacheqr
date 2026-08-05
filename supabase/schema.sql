@@ -33,13 +33,17 @@ create table if not exists bins (
 create index if not exists bins_location_id_idx on bins(location_id);
 
 -- Keep updated_at current on every edit.
+-- `set search_path = public` pins which schema this function resolves
+-- unqualified names against, so it can't be tricked by a same-named object
+-- created earlier in a caller's search path (Supabase advisor: function_search_path_mutable).
 create or replace function set_updated_at()
 returns trigger as $$
 begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql
+set search_path = public;
 
 drop trigger if exists bins_set_updated_at on bins;
 create trigger bins_set_updated_at
