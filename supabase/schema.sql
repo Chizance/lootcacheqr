@@ -87,9 +87,27 @@ create policy "authenticated users can write bins"
 
 -- ---------------------------------------------------------------------------
 -- Realtime — lets both phones see each other's edits live.
+-- `alter publication ... add table` has no built-in "if not already added"
+-- form, so it's wrapped in a check against pg_publication_tables to make
+-- this file genuinely safe to re-run (unlike a bare ALTER PUBLICATION, which
+-- errors with "already member of publication" on a second run).
 -- ---------------------------------------------------------------------------
-alter publication supabase_realtime add table bins;
-alter publication supabase_realtime add table locations;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'bins'
+  ) then
+    alter publication supabase_realtime add table bins;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'locations'
+  ) then
+    alter publication supabase_realtime add table locations;
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- Storage bucket for bin photos.
