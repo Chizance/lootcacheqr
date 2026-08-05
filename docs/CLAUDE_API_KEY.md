@@ -28,11 +28,16 @@ Keep this key somewhere private for a minute (a password manager, or just your c
 
 This is what deploys the Edge Function and sets its secret.
 
-**Windows (PowerShell):**
+**Windows (PowerShell):** the Supabase CLI isn't available via winget — it's officially distributed through [Scoop](https://scoop.sh) instead. If you don't already have Scoop installed:
 ```powershell
-winget install Supabase.CLI
+irm get.scoop.sh | iex
 ```
-If you'd rather not use winget, see the [Supabase CLI docs](https://supabase.com/docs/guides/cli/getting-started) for other install options.
+Then install the Supabase CLI:
+```powershell
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+```
+See the [Supabase CLI docs](https://supabase.com/docs/guides/cli/getting-started) if you'd rather use a different install method.
 
 Restart your terminal after installing, then confirm it worked:
 ```
@@ -47,7 +52,7 @@ supabase login
 This opens a browser window to authorize the CLI against your Supabase account.
 
 ```
-supabase link --project-ref <your-project-ref>
+supabase link --project-ref your-project-ref
 ```
 Your project ref is in the Supabase dashboard URL: `https://supabase.com/dashboard/project/<this-part>`, or under **Project Settings > General**.
 
@@ -76,9 +81,9 @@ The function also requires the caller to be logged in (Supabase verifies your ap
 
 After deploying, you can double-check yourself:
 
-- **In the repo:** `grep -r "sk-ant" .` (excluding `.git`) should find nothing. `.env`, `.env.local`, and `supabase/functions/**/.env` are all gitignored — see the confirmation in the main setup walkthrough.
+- **In the repo:** `git grep -i "sk-ant"` (PowerShell) — or `grep -r "sk-ant" . --exclude-dir=.git` on macOS/Linux — should find nothing. This only searches files git actually tracks, which is exactly what matters: `.env`, `.env.local`, and `supabase/functions/**/.env` are all gitignored, so even if a key were sitting in one of those locally, this command (and a real commit) would never see it.
 - **In the browser:** open your deployed site, open DevTools > Network tab, tap "Scan box", and inspect the request to `.../functions/v1/extract-items`. You'll see your photo going out and JSON coming back — no Anthropic key anywhere in the request or response.
-- **In the built bundle:** after `npm run build`, `grep -r "sk-ant" dist/` should find nothing, because the key was never part of the frontend build in the first place.
+- **In the built bundle:** after `npm run build`, run `Get-ChildItem -Recurse -File dist | Select-String -Pattern "sk-ant"` (PowerShell) — or `grep -r "sk-ant" dist/` on macOS/Linux — which should find nothing, because the key was never part of the frontend build in the first place.
 
 ## Tracking cost
 
