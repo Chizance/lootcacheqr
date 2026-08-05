@@ -107,7 +107,7 @@ The repo already has a GitHub Actions workflow ([`.github/workflows/deploy.yml`]
 Once you push your first commit (see [docs/GIT_WORKFLOW.md](./GIT_WORKFLOW.md)), go to the **Actions** tab on GitHub to watch the "Deploy to GitHub Pages" workflow run. When it finishes, your app is live at:
 
 ```
-https://4568jonny-cell.github.io/storage-inventory/
+https://chizance.github.io/storage-inventory/
 ```
 
 Open that on your phone and **add it to your home screen** (Safari: Share > Add to Home Screen; Android Chrome: menu > Install app / Add to Home screen) — that's what makes it launch full-screen like a real app instead of opening in a browser tab.
