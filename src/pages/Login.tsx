@@ -26,9 +26,16 @@ export function Login() {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError
       } else {
-        const { error: signUpError } = await supabase.auth.signUp({ email, password })
+        const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
         if (signUpError) throw signUpError
-        setInfo('Account created. If email confirmation is required, check your inbox before signing in.')
+        // Supabase doesn't return an error for an already-registered email (privacy:
+        // it won't reveal an account exists) — instead it returns a user with no
+        // identities. That's the one reliable way to detect this case client-side.
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          setError('That email is already registered. Try signing in instead.')
+        } else {
+          setInfo('Account created. If email confirmation is required, check your inbox before signing in.')
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
