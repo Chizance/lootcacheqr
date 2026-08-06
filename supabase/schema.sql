@@ -1,4 +1,4 @@
--- Storage Inventory — database schema
+-- LootcacheQR — database schema
 -- Paste this whole file into the Supabase SQL Editor (Dashboard > SQL Editor > New query) and run it.
 -- Safe to re-run: every statement uses IF NOT EXISTS / OR REPLACE / DROP-then-CREATE for policies.
 

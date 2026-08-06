@@ -1,4 +1,4 @@
-# 📦 Storage Inventory
+# 📦 LootcacheQR
 
 A personal PWA for tracking what's in your storage bins — installable to your phone's home screen, searchable, backed by QR-coded stickers on each physical bin.
 
@@ -37,5 +37,5 @@ See [docs/SETUP.md](./docs/SETUP.md) if you haven't created your Supabase projec
 Pushing to `main` triggers an automatic build + deploy via GitHub Actions (see `.github/workflows/deploy.yml`). Live at:
 
 ```
-https://chizance.github.io/storage-inventory/
+https://chizance.github.io/lootcacheqr/
 ```

@@ -53,7 +53,7 @@ Read through the list. You should **not** see `.env` anywhere in it (only `.env.
 Then:
 ```
 git add .
-git commit -m "Initial commit: Storage Inventory app"
+git commit -m "Initial commit: LootcacheQR app"
 git push
 ```
 
