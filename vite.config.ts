@@ -2,10 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// GitHub Pages serves this repo at https://chizance.github.io/storage-inventory/
+// GitHub Pages serves this repo at https://chizance.github.io/lootcacheqr/
 // so every asset URL needs that subpath prefix — Vite's `base` handles this everywhere
 // except the manifest, which we set separately below with the same prefix.
-const BASE_PATH = '/storage-inventory/'
+// (This whole BASE_PATH goes away in favor of '/' once the custom domain,
+// lootcacheqr.is-a.dev, is live — see docs/SETUP.md.)
+const BASE_PATH = '/lootcacheqr/'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,8 +19,8 @@ export default defineConfig({
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         id: BASE_PATH,
-        name: 'Storage Inventory',
-        short_name: 'Storage',
+        name: 'LootcacheQR',
+        short_name: 'LootcacheQR',
         description: 'Personal storage bin inventory with QR codes and search',
         start_url: BASE_PATH,
         scope: BASE_PATH,

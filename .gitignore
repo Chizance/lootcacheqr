@@ -19,6 +19,10 @@ dist-ssr
 supabase/.env
 supabase/functions/**/.env
 
+# Local Supabase CLI state (which project this machine is linked to) —
+# machine-specific, regenerates automatically, not meant to be shared
+supabase/.temp/
+
 # Local Claude Code settings (machine-specific, not shared)
 .claude/settings.local.json
 

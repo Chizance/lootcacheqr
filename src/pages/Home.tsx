@@ -51,7 +51,7 @@ export function Home() {
   }, [bins, query])
 
   return (
-    <Layout title="Storage Inventory">
+    <Layout title="LootcacheQR">
       <input
         type="search"
         placeholder="Search items, titles, tags…"

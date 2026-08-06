@@ -47,7 +47,7 @@ export function Login() {
   return (
     <div className="center-screen">
       <div className="card" style={{ width: '100%', maxWidth: 380 }}>
-        <h1>📦 Storage Inventory</h1>
+        <h1>📦 LootcacheQR</h1>
         <form onSubmit={handleSubmit} className="stack">
           <div>
             <label htmlFor="email">Email</label>
