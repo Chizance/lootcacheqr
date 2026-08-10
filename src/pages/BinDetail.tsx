@@ -25,6 +25,13 @@ export function BinDetail() {
     if (!id) return
     let cancelled = false
 
+    // Clear the previously-loaded bin immediately, before the new fetch
+    // resolves — otherwise, navigating directly from one bin's page to
+    // another (client-side, no full reload) can briefly render the old
+    // bin's data (QR code included) under the new URL.
+    setBin(null)
+    setNotFound(false)
+
     supabase
       .from('bins')
       .select('*')
@@ -141,7 +148,7 @@ export function BinDetail() {
       <PhotoUploader binId={bin.id} photos={bin.photos} onChange={(photos) => patch({ photos })} />
 
       <label>QR code</label>
-      <QRCodeCard binId={bin.id} label={bin.number || bin.title} />
+      <QRCodeCard binId={bin.id} number={bin.number} title={bin.title} />
 
       <div className="stack" style={{ marginTop: 24 }}>
         {!confirmingEmpty ? (
