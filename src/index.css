@@ -349,7 +349,7 @@ button {
 
 .qr-box img {
   width: 200px;
-  height: 200px;
+  height: auto;
 }
 
 .center-screen {

@@ -5,30 +5,100 @@ export function binUrl(binId: string): string {
   return `${window.location.origin}${import.meta.env.BASE_URL}#/bin/${binId}`
 }
 
-export function QRCodeCard({ binId, label }: { binId: string; label: string }) {
+// Print label size: 3.75" x 5" so four of them (2x2) exactly fill a 7.5"x10"
+// sheet in Word. Rendered at 300 DPI for crisp print quality.
+const DPI = 300
+const LABEL_WIDTH_IN = 3.75
+const LABEL_HEIGHT_IN = 5
+export const LABEL_WIDTH_PX = Math.round(LABEL_WIDTH_IN * DPI)
+export const LABEL_HEIGHT_PX = Math.round(LABEL_HEIGHT_IN * DPI)
+
+function labelText(number: string, title: string): string {
+  if (number.trim()) return `BIN #${number.trim()}`
+  if (title.trim()) return title.trim().toUpperCase()
+  return 'BIN'
+}
+
+async function generateLabelImage(binId: string, number: string, title: string): Promise<string> {
+  const width = LABEL_WIDTH_PX
+  const height = LABEL_HEIGHT_PX
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+
+  // White background — printed labels, no transparency.
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, width, height)
+
+  // QR code, square, centered horizontally near the top.
+  const margin = Math.round(width * 0.08)
+  const qrSize = width - margin * 2
+  const qrCanvas = document.createElement('canvas')
+  await QRCode.toCanvas(qrCanvas, binUrl(binId), { width: qrSize, margin: 1 })
+  ctx.drawImage(qrCanvas, margin, margin, qrSize, qrSize)
+
+  // "BIN #123" — bold, underlined, centered beneath the QR code.
+  const text = labelText(number, title)
+  const fontSize = Math.round(width * 0.12)
+  ctx.font = `bold ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`
+  ctx.fillStyle = '#000000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  const textY = margin + qrSize + Math.round(height * 0.14)
+  ctx.fillText(text, width / 2, textY)
+
+  const textWidth = ctx.measureText(text).width
+  const underlineY = textY + Math.round(fontSize * 0.18)
+  ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.045))
+  ctx.strokeStyle = '#000000'
+  ctx.beginPath()
+  ctx.moveTo(width / 2 - textWidth / 2, underlineY)
+  ctx.lineTo(width / 2 + textWidth / 2, underlineY)
+  ctx.stroke()
+
+  return canvas.toDataURL('image/png')
+}
+
+export function QRCodeCard({ binId, number, title }: { binId: string; number: string; title: string }) {
   const [dataUrl, setDataUrl] = useState('')
   const url = binUrl(binId)
 
   useEffect(() => {
-    QRCode.toDataURL(url, { width: 600, margin: 2 }).then(setDataUrl)
-  }, [url])
+    let cancelled = false
+    generateLabelImage(binId, number, title).then((result) => {
+      if (!cancelled) setDataUrl(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [binId, number, title])
 
   const download = () => {
     const a = document.createElement('a')
     a.href = dataUrl
-    a.download = `bin-qr-${label || binId}.png`
+    a.download = `bin-label-${number || title || binId}.png`
     a.click()
   }
 
   return (
     <div className="qr-box">
-      {dataUrl ? <img src={dataUrl} alt={`QR code for bin ${label}`} /> : <p className="muted">Generating…</p>}
+      {dataUrl ? (
+        <img src={dataUrl} alt={`Printable QR label for bin ${number || title}`} />
+      ) : (
+        <p className="muted">Generating…</p>
+      )}
       <p className="muted" style={{ fontSize: '0.8rem', wordBreak: 'break-all', textAlign: 'center' }}>
         {url}
       </p>
       <button type="button" className="btn-secondary" onClick={download} disabled={!dataUrl}>
-        ⬇️ Download QR to print
+        ⬇️ Download label to print
       </button>
+      <p className="muted" style={{ fontSize: '0.75rem', textAlign: 'center' }}>
+        3.75" × 5" — paste 4 copies into Word (2×2) to fill a 7.5" × 10" sheet
+      </p>
     </div>
   )
 }
