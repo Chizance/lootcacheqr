@@ -13,15 +13,57 @@ const LABEL_HEIGHT_IN = 5
 export const LABEL_WIDTH_PX = Math.round(LABEL_WIDTH_IN * DPI)
 export const LABEL_HEIGHT_PX = Math.round(LABEL_HEIGHT_IN * DPI)
 
-function labelText(number: string, title: string): string {
-  if (number.trim()) return `BIN #${number.trim()}`
-  if (title.trim()) return title.trim().toUpperCase()
-  return 'BIN'
+const FONT_STACK = 'system-ui, -apple-system, "Segoe UI", sans-serif'
+
+/** Largest font size (up to maxSize, down to minSize) at which `text` still fits within `maxWidth`. */
+function fitFontSize(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxSize: number,
+  minSize: number,
+  weight: 'normal' | 'bold',
+): number {
+  let size = maxSize
+  while (size > minSize) {
+    ctx.font = `${weight} ${size}px ${FONT_STACK}`
+    if (ctx.measureText(text).width <= maxWidth) break
+    size -= 2
+  }
+  return size
+}
+
+function drawCenteredText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  centerX: number,
+  y: number,
+  size: number,
+  weight: 'normal' | 'bold',
+  underline: boolean,
+): void {
+  ctx.font = `${weight} ${size}px ${FONT_STACK}`
+  ctx.fillStyle = '#000000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText(text, centerX, y)
+
+  if (underline) {
+    const textWidth = ctx.measureText(text).width
+    const underlineY = y + Math.round(size * 0.18)
+    ctx.lineWidth = Math.max(2, Math.round(size * 0.045))
+    ctx.strokeStyle = '#000000'
+    ctx.beginPath()
+    ctx.moveTo(centerX - textWidth / 2, underlineY)
+    ctx.lineTo(centerX + textWidth / 2, underlineY)
+    ctx.stroke()
+  }
 }
 
 async function generateLabelImage(binId: string, number: string, title: string): Promise<string> {
   const width = LABEL_WIDTH_PX
   const height = LABEL_HEIGHT_PX
+  const nameText = number.trim() || title.trim() || '(unlabeled)'
 
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -40,24 +82,17 @@ async function generateLabelImage(binId: string, number: string, title: string):
   await QRCode.toCanvas(qrCanvas, binUrl(binId), { width: qrSize, margin: 1 })
   ctx.drawImage(qrCanvas, margin, margin, qrSize, qrSize)
 
-  // "BIN #123" — bold, underlined, centered beneath the QR code.
-  const text = labelText(number, title)
-  const fontSize = Math.round(width * 0.12)
-  ctx.font = `bold ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`
-  ctx.fillStyle = '#000000'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'alphabetic'
-  const textY = margin + qrSize + Math.round(height * 0.14)
-  ctx.fillText(text, width / 2, textY)
+  // "BIN" — always bold + underlined, fixed size, directly under the QR code.
+  const binLabelSize = Math.round(width * 0.1)
+  const binLabelY = margin + qrSize + Math.round(height * 0.11)
+  drawCenteredText(ctx, 'BIN', width / 2, binLabelY, binLabelSize, 'bold', true)
 
-  const textWidth = ctx.measureText(text).width
-  const underlineY = textY + Math.round(fontSize * 0.18)
-  ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.045))
-  ctx.strokeStyle = '#000000'
-  ctx.beginPath()
-  ctx.moveTo(width / 2 - textWidth / 2, underlineY)
-  ctx.lineTo(width / 2 + textWidth / 2, underlineY)
-  ctx.stroke()
+  // The bin number/name text — shrinks (or grows, up to a cap) to fit the
+  // label width on one line, so the overall label size never has to change.
+  const textMaxWidth = width - margin * 1.5
+  const nameY = binLabelY + Math.round(height * 0.13)
+  const nameSize = fitFontSize(ctx, nameText, textMaxWidth, Math.round(width * 0.15), 28, 'normal')
+  drawCenteredText(ctx, nameText, width / 2, nameY, nameSize, 'normal', false)
 
   return canvas.toDataURL('image/png')
 }

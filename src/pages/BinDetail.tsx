@@ -20,6 +20,11 @@ export function BinDetail() {
   const [saving, setSaving] = useState(false)
   const [confirmingEmpty, setConfirmingEmpty] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  // The number/name field gets its own local draft + confirm-on-blur, rather
+  // than saving on every keystroke like the other fields — it's what's
+  // printed on the physical sticker, so an accidental edit is more costly
+  // than for title/description/tags.
+  const [numberDraft, setNumberDraft] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -58,6 +63,12 @@ export function BinDetail() {
     }
   }, [id])
 
+  // Reset the number draft whenever a (new) bin finishes loading — but not
+  // on every `bin` update, so it doesn't fight with in-progress typing.
+  useEffect(() => {
+    if (bin) setNumberDraft(bin.number)
+  }, [bin?.id])
+
   const patch = useCallback(
     async (fields: Partial<BinRow>) => {
       if (!id) return
@@ -76,7 +87,22 @@ export function BinDetail() {
       await supabase.storage.from('bin-photos').remove(bin.photos)
     }
     await patch({ number: '', title: '', description: '', tags: [], items: [], photos: [], location_id: null })
+    setNumberDraft('')
     setConfirmingEmpty(false)
+  }
+
+  const handleNumberBlur = () => {
+    if (!bin || numberDraft === bin.number) return
+    const confirmed = window.confirm(
+      `Change the bin number/name from "${bin.number || '(blank)'}" to "${numberDraft || '(blank)'}"?\n\n` +
+        `This is the text printed on the physical sticker. If you've already printed a label for this bin, ` +
+        `you'll need to reprint it to match.`,
+    )
+    if (confirmed) {
+      patch({ number: numberDraft })
+    } else {
+      setNumberDraft(bin.number)
+    }
   }
 
   const deleteBin = async () => {
@@ -111,7 +137,19 @@ export function BinDetail() {
       </p>
 
       <label htmlFor="number">Bin number / name</label>
-      <input id="number" type="text" value={bin.number} onChange={(e) => patch({ number: e.target.value })} />
+      <input
+        id="number"
+        type="text"
+        value={numberDraft}
+        onChange={(e) => setNumberDraft(e.target.value)}
+        onBlur={handleNumberBlur}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+        }}
+      />
+      <p className="muted" style={{ marginTop: 4, fontSize: '0.8rem' }}>
+        This is what's printed on the sticker — changing it will ask you to confirm.
+      </p>
 
       <label htmlFor="title">Title</label>
       <div className="field-row">
