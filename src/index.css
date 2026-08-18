@@ -451,6 +451,25 @@ button {
   border-radius: 0 10px 10px 0;
 }
 
+.sort-header {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  padding: 0;
+  min-height: auto;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sort-header:hover,
+.sort-header:focus-visible {
+  text-decoration: underline;
+}
+
 .bin-table tbody tr {
   background: var(--surface);
   box-shadow: var(--shadow);

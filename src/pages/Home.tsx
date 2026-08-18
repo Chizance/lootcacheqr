@@ -12,6 +12,27 @@ const QRScanner = lazy(() => import('../components/QRScanner').then((m) => ({ de
 
 const BIN_ID_PATTERN = /#\/bin\/([0-9a-fA-F-]{36})/
 
+type SortField = 'bin' | 'location' | 'accessed'
+type SortDir = 'asc' | 'desc'
+
+function binDisplayName(bin: BinRow): string {
+  return bin.title || bin.number || 'Untitled bin'
+}
+
+function formatRelativeTime(iso: string): string {
+  const diffSec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (diffSec < 60) return 'just now'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 30) return `${diffDay}d ago`
+  const diffMonth = Math.floor(diffDay / 30)
+  if (diffMonth < 12) return `${diffMonth}mo ago`
+  return `${Math.floor(diffMonth / 12)}y ago`
+}
+
 export function Home() {
   const navigate = useNavigate()
   const [bins, setBins] = useState<BinRow[]>([])
@@ -20,13 +41,15 @@ export function Home() {
   const [loading, setLoading] = useState(true)
   const [showScanner, setShowScanner] = useState(false)
   const [scanError, setScanError] = useState('')
+  const [sortField, setSortField] = useState<SortField>('bin')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       const [binsRes, locationsRes] = await Promise.all([
-        supabase.from('bins').select('*').order('updated_at', { ascending: false }),
+        supabase.from('bins').select('*'),
         supabase.from('locations').select('*'),
       ])
       if (cancelled) return
@@ -69,6 +92,35 @@ export function Home() {
       return haystack.includes(q)
     })
   }, [bins, query])
+
+  const sorted = useMemo(() => {
+    const dirMul = sortDir === 'asc' ? 1 : -1
+    const rows = filtered.map((bin) => ({ bin, locationLabel: locationPath(bin.location_id, locations) }))
+    rows.sort((a, b) => {
+      switch (sortField) {
+        case 'location':
+          return a.locationLabel.localeCompare(b.locationLabel) * dirMul
+        case 'accessed':
+          return (
+            (new Date(a.bin.last_accessed_at).getTime() - new Date(b.bin.last_accessed_at).getTime()) * dirMul
+          )
+        default:
+          return binDisplayName(a.bin).localeCompare(binDisplayName(b.bin)) * dirMul
+      }
+    })
+    return rows.map((r) => r.bin)
+  }, [filtered, locations, sortField, sortDir])
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
+  const sortArrow = (field: SortField) => (sortField === field ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '')
 
   const handleScan = (data: string) => {
     const match = data.match(BIN_ID_PATTERN)
@@ -124,23 +176,36 @@ export function Home() {
 
       {loading && <p className="muted" style={{ marginTop: 16 }}>Loading…</p>}
 
-      {!loading && filtered.length === 0 && (
+      {!loading && sorted.length === 0 && (
         <p className="muted" style={{ marginTop: 16 }}>
           {query ? 'No matches.' : 'No bins yet — tap Add Bin to create your first one.'}
         </p>
       )}
 
-      {!loading && filtered.length > 0 && (
+      {!loading && sorted.length > 0 && (
         <table className="bin-table" style={{ marginTop: 12 }}>
           <thead>
             <tr>
-              <th>Bin</th>
-              <th>Location</th>
+              <th>
+                <button type="button" className="sort-header" onClick={() => toggleSort('bin')}>
+                  Bin{sortArrow('bin')}
+                </button>
+              </th>
+              <th>
+                <button type="button" className="sort-header" onClick={() => toggleSort('location')}>
+                  Location{sortArrow('location')}
+                </button>
+              </th>
               <th>Tags</th>
+              <th>
+                <button type="button" className="sort-header" onClick={() => toggleSort('accessed')}>
+                  Last accessed{sortArrow('accessed')}
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((bin) => {
+            {sorted.map((bin) => {
               const goToBin = () => navigate(`/bin/${bin.id}`)
               return (
                 <tr
@@ -153,7 +218,7 @@ export function Home() {
                   }}
                 >
                   <td>
-                    {bin.title || bin.number || 'Untitled bin'}
+                    {binDisplayName(bin)}
                     {bin.number && bin.title && <div className="table-location">#{bin.number}</div>}
                   </td>
                   <td data-label="Location" className="table-location">
@@ -171,6 +236,9 @@ export function Home() {
                     ) : (
                       <span className="muted">—</span>
                     )}
+                  </td>
+                  <td data-label="Last accessed" className="table-location">
+                    {formatRelativeTime(bin.last_accessed_at)}
                   </td>
                 </tr>
               )
