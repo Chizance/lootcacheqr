@@ -1,15 +1,21 @@
 :root {
-  --brand: #92400e;
-  --brand-dark: #78350f;
-  --brand-light: #fef3e2;
-  --bg: #fffaf3;
+  /* Primary — actions, navigation, headings */
+  --brand: #c2410c;
+  --brand-dark: #9a3412;
+  --brand-light: #ffedd5;
+  /* Secondary — tags and other non-primary highlights, kept visually
+     distinct from brand so the two never compete for attention */
+  --accent: #0f766e;
+  --accent-light: #ccfbf1;
+  --bg: #fffdf9;
   --surface: #ffffff;
   --text: #1c1917;
   --text-muted: #57534e;
-  --border: #e7dfd3;
+  --border: #e5d9c8;
   --danger: #b91c1c;
   --danger-bg: #fee2e2;
   --tap-min: 48px;
+  --shadow: 0 1px 2px rgba(28, 25, 23, 0.06), 0 2px 6px rgba(28, 25, 23, 0.08);
 
   color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -173,21 +179,22 @@ button {
 }
 
 .chip {
-  background: var(--brand-light);
-  color: var(--brand-dark);
+  background: var(--accent-light);
+  color: var(--accent);
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 0.9rem;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-weight: 600;
 }
 
 .chip button {
   background: none;
   min-height: auto;
   padding: 0;
-  color: var(--brand-dark);
+  color: var(--accent);
   font-size: 1rem;
   line-height: 1;
 }
@@ -200,6 +207,7 @@ button {
   display: block;
   text-decoration: none;
   color: inherit;
+  box-shadow: var(--shadow);
 }
 
 .card + .card {
@@ -250,6 +258,7 @@ button {
   border-radius: 10px;
   overflow: hidden;
   background: var(--brand-light);
+  cursor: pointer;
 }
 
 .photo-thumb img {
@@ -303,6 +312,7 @@ button {
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 8px rgba(28, 25, 23, 0.06);
   padding-bottom: env(safe-area-inset-bottom);
   z-index: 10;
 }
@@ -345,6 +355,7 @@ button {
   padding: 16px;
   border-radius: 14px;
   border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
 
 .qr-box img {
@@ -358,4 +369,192 @@ button {
   align-items: center;
   justify-content: center;
   padding: 24px;
+}
+
+.scanner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 12px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 999px;
+  font-size: 1.2rem;
+}
+
+.scanner-hint {
+  position: absolute;
+  bottom: calc(32px + env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.scanner-error {
+  color: #fff;
+  text-align: center;
+  padding: 24px;
+}
+
+.scanner-error .muted {
+  color: #d4d4d4;
+}
+
+/* Bin list — a real table for column alignment/uniformity, but collapses
+   to labeled stacked rows below ~520px so it stays one-handed-friendly on
+   a phone instead of forcing horizontal scroll. */
+.bin-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.bin-table thead th {
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--brand-light);
+  background: var(--brand);
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+.bin-table thead th:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.bin-table thead th:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.bin-table tbody tr {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.bin-table tbody tr:hover,
+.bin-table tbody tr:focus-within {
+  outline: 2px solid var(--brand-light);
+}
+
+.bin-table td {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.bin-table td:first-child {
+  border-left: 1px solid var(--border);
+  border-radius: 10px 0 0 10px;
+  font-weight: 700;
+}
+
+.bin-table td:last-child {
+  border-right: 1px solid var(--border);
+  border-radius: 0 10px 10px 0;
+}
+
+.bin-table .table-location {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .bin-table thead {
+    display: none;
+  }
+
+  .bin-table,
+  .bin-table tbody,
+  .bin-table tr,
+  .bin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .bin-table tr {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .bin-table td {
+    padding: 2px 0;
+    border: none;
+  }
+
+  .bin-table td:first-child,
+  .bin-table td:last-child {
+    border-radius: 0;
+  }
+
+  .bin-table td[data-label]:not(:empty)::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+}
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.lightbox-scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 12px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 999px;
+  font-size: 1.2rem;
 }

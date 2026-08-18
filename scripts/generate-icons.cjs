@@ -7,10 +7,10 @@ const zlib = require("zlib");
 
 const OUT_DIR = path.join(__dirname, "..", "public");
 
-const BG = [146, 64, 14]; // amber-800 background
-const BOX = [232, 183, 107]; // tan box body
-const SEAM = [182, 127, 62]; // darker flap seam
-const TAPE = [245, 230, 200]; // cream tape stripe
+const BG = [194, 65, 12]; // --brand terracotta background
+const BOX = [255, 214, 165]; // warm tan box body
+const SEAM = [230, 160, 100]; // darker flap seam
+const TAPE = [255, 237, 213]; // --brand-light tape stripe
 
 function crc32(buf) {
   let c;

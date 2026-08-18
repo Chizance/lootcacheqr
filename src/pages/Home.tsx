@@ -1,15 +1,25 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
 import { locationPath } from '../lib/locations'
 import type { BinRow, LocationRow } from '../types'
 
+// The QR-decoding library is a meaningful chunk of code that's only needed
+// when someone actually opens the scanner — load it on demand instead of
+// bundling it into every page load.
+const QRScanner = lazy(() => import('../components/QRScanner').then((m) => ({ default: m.QRScanner })))
+
+const BIN_ID_PATTERN = /#\/bin\/([0-9a-fA-F-]{36})/
+
 export function Home() {
+  const navigate = useNavigate()
   const [bins, setBins] = useState<BinRow[]>([])
   const [locations, setLocations] = useState<LocationRow[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scanError, setScanError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -33,9 +43,19 @@ export function Home() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, () => load())
       .subscribe()
 
+    // Mobile browsers/PWAs freeze JS execution (and can drop the realtime
+    // socket) while backgrounded. Re-fetch whenever the app comes back to
+    // the foreground, so reopening it after a while doesn't show stale data
+    // until a manual refresh.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 
@@ -50,15 +70,57 @@ export function Home() {
     })
   }, [bins, query])
 
+  const handleScan = (data: string) => {
+    const match = data.match(BIN_ID_PATTERN)
+    if (match) {
+      setShowScanner(false)
+      setScanError('')
+      navigate(`/bin/${match[1]}`)
+    } else {
+      setScanError("That doesn't look like a LootcacheQR bin code — try again or scan a different code.")
+    }
+  }
+
   return (
     <Layout title="LootcacheQR">
-      <input
-        type="search"
-        placeholder="Search items, titles, tags…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        aria-label="Search bins"
-      />
+      <div className="field-row">
+        <input
+          type="search"
+          placeholder="Search items, titles, tags…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search bins"
+        />
+        <button
+          type="button"
+          className="btn-icon"
+          onClick={() => {
+            setScanError('')
+            setShowScanner(true)
+          }}
+          aria-label="Scan a bin's QR code"
+          title="Scan QR code"
+        >
+          📷
+        </button>
+      </div>
+
+      {showScanner && (
+        <Suspense
+          fallback={
+            <div className="scanner-overlay">
+              <p style={{ color: '#fff' }}>Loading scanner…</p>
+            </div>
+          }
+        >
+          <QRScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
+        </Suspense>
+      )}
+      {scanError && (
+        <p className="error-banner" style={{ marginTop: 8 }}>
+          {scanError}
+        </p>
+      )}
 
       {loading && <p className="muted" style={{ marginTop: 16 }}>Loading…</p>}
 
@@ -68,26 +130,54 @@ export function Home() {
         </p>
       )}
 
-      <div style={{ marginTop: 12 }}>
-        {filtered.map((bin) => (
-          <Link to={`/bin/${bin.id}`} className="card" key={bin.id}>
-            <div className="card-title">{bin.title || bin.number || 'Untitled bin'}</div>
-            <div className="card-sub">
-              {bin.number ? `#${bin.number} · ` : ''}
-              {locationPath(bin.location_id, locations)}
-            </div>
-            {bin.tags.length > 0 && (
-              <div className="chip-row">
-                {bin.tags.map((tag) => (
-                  <span className="chip" key={tag}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </Link>
-        ))}
-      </div>
+      {!loading && filtered.length > 0 && (
+        <table className="bin-table" style={{ marginTop: 12 }}>
+          <thead>
+            <tr>
+              <th>Bin</th>
+              <th>Location</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((bin) => {
+              const goToBin = () => navigate(`/bin/${bin.id}`)
+              return (
+                <tr
+                  key={bin.id}
+                  tabIndex={0}
+                  role="button"
+                  onClick={goToBin}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') goToBin()
+                  }}
+                >
+                  <td>
+                    {bin.title || bin.number || 'Untitled bin'}
+                    {bin.number && bin.title && <div className="table-location">#{bin.number}</div>}
+                  </td>
+                  <td data-label="Location" className="table-location">
+                    {locationPath(bin.location_id, locations)}
+                  </td>
+                  <td data-label="Tags">
+                    {bin.tags.length > 0 ? (
+                      <div className="chip-row" style={{ marginTop: 0 }}>
+                        {bin.tags.map((tag) => (
+                          <span className="chip" key={tag}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
     </Layout>
   )
 }

@@ -30,36 +30,46 @@ export function BinDetail() {
     if (!id) return
     let cancelled = false
 
-    // Clear the previously-loaded bin immediately, before the new fetch
-    // resolves — otherwise, navigating directly from one bin's page to
-    // another (client-side, no full reload) can briefly render the old
-    // bin's data (QR code included) under the new URL.
-    setBin(null)
-    setNotFound(false)
+    async function loadBin(clearFirst: boolean) {
+      // Clearing first matters when `id` just changed (navigating directly
+      // from one bin's page to another) — otherwise the old bin's data,
+      // QR code included, can briefly render under the new URL. It's
+      // skipped on a background-refresh re-fetch of the *same* bin, so
+      // returning to the app doesn't flash back to a loading state.
+      if (clearFirst) {
+        setBin(null)
+        setNotFound(false)
+      }
+      const { data } = await supabase.from('bins').select('*').eq('id', id).maybeSingle()
+      if (cancelled) return
+      if (!data) {
+        setNotFound(true)
+        return
+      }
+      setBin(data)
+    }
 
-    supabase
-      .from('bins')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled) return
-        if (!data) {
-          setNotFound(true)
-          return
-        }
-        setBin(data)
-      })
+    async function loadLocations() {
+      const { data } = await supabase.from('locations').select('*')
+      if (!cancelled && data) setLocations(data)
+    }
 
-    supabase
-      .from('locations')
-      .select('*')
-      .then(({ data }) => {
-        if (!cancelled && data) setLocations(data)
-      })
+    loadBin(true)
+    loadLocations()
+
+    // Re-fetch on returning from the background — see the matching comment
+    // in Home.tsx for why this is needed.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadBin(false)
+        loadLocations()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
       cancelled = true
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [id])
 

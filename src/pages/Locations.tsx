@@ -25,9 +25,17 @@ export function Locations() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, () => load())
       .subscribe()
 
+    // Re-fetch on returning from the background — see the matching comment
+    // in Home.tsx for why this is needed.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { PhotoLightbox } from './PhotoLightbox'
 
 const BUCKET = 'bin-photos'
 
@@ -15,6 +16,7 @@ export function PhotoUploader({
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [expandedPath, setExpandedPath] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -77,14 +79,31 @@ export function PhotoUploader({
       {photos.length > 0 && (
         <div className="photo-grid">
           {photos.map((path) => (
-            <div className="photo-thumb" key={path}>
-              {urls[path] ? <img src={urls[path]} alt="Bin contents" /> : null}
-              <button type="button" onClick={() => removePhoto(path)} aria-label="Remove photo">
+            <div
+              className="photo-thumb"
+              key={path}
+              onClick={() => urls[path] && setExpandedPath(path)}
+              role={urls[path] ? 'button' : undefined}
+              tabIndex={urls[path] ? 0 : undefined}
+            >
+              {urls[path] ? <img src={urls[path]} alt="Bin contents — tap to expand" /> : null}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  removePhoto(path)
+                }}
+                aria-label="Remove photo"
+              >
                 ✕
               </button>
             </div>
           ))}
         </div>
+      )}
+
+      {expandedPath && urls[expandedPath] && (
+        <PhotoLightbox src={urls[expandedPath]} onClose={() => setExpandedPath(null)} />
       )}
 
       <input
