@@ -47,6 +47,15 @@ export function BinDetail() {
         return
       }
       setBin(data)
+
+      // Record that this bin was actually opened (as opposed to a silent
+      // background re-fetch of a page you're already sitting on) — this is
+      // what "last accessed" sorting on the Search page is based on.
+      // Supabase's query builder is lazy and only runs once awaited/`.then`ed,
+      // so this has to be awaited even though nothing here needs the result.
+      if (clearFirst) {
+        await supabase.from('bins').update({ last_accessed_at: new Date().toISOString() }).eq('id', id)
+      }
     }
 
     async function loadLocations() {

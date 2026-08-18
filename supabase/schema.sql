@@ -27,8 +27,14 @@ create table if not exists bins (
   photos text[] not null default '{}',
   location_id uuid references locations(id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  last_accessed_at timestamptz not null default now()
 );
+
+-- Adds last_accessed_at to a table that already existed before this column
+-- was introduced. `create table if not exists` above only applies to a
+-- brand-new table, so this is what actually takes effect on a live database.
+alter table bins add column if not exists last_accessed_at timestamptz not null default now();
 
 create index if not exists bins_location_id_idx on bins(location_id);
 

@@ -16,6 +16,7 @@ export interface BinRow {
   location_id: string | null
   created_at: string
   updated_at: string
+  last_accessed_at: string
 }
 
 export interface ExtractedItemsResponse {
