@@ -11,12 +11,23 @@ import type { BinRow, LocationRow } from '../types'
 const QRScanner = lazy(() => import('../components/QRScanner').then((m) => ({ default: m.QRScanner })))
 
 const BIN_ID_PATTERN = /#\/bin\/([0-9a-fA-F-]{36})/
+const MAX_SHOWN_MATCHES = 3
+const MATCH_SNIPPET_LENGTH = 60
 
 type SortField = 'bin' | 'location' | 'accessed'
 type SortDir = 'asc' | 'desc'
 
+interface SearchMatch {
+  field: 'Bin' | 'Location' | 'Tag' | 'Item'
+  text: string
+}
+
 function binDisplayName(bin: BinRow): string {
   return bin.title || bin.number || 'Untitled bin'
+}
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
 
 function formatRelativeTime(iso: string): string {
@@ -31,6 +42,26 @@ function formatRelativeTime(iso: string): string {
   const diffMonth = Math.floor(diffDay / 30)
   if (diffMonth < 12) return `${diffMonth}mo ago`
   return `${Math.floor(diffMonth / 12)}y ago`
+}
+
+// Which specific strings on this bin the search keyword actually matched —
+// so search results can show *why* a bin matched without opening it.
+function findMatches(bin: BinRow, locationLabel: string, query: string): SearchMatch[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  const matches: SearchMatch[] = []
+
+  for (const text of [bin.title, bin.description, bin.number]) {
+    if (text && text.toLowerCase().includes(q)) matches.push({ field: 'Bin', text })
+  }
+  if (locationLabel.toLowerCase().includes(q)) matches.push({ field: 'Location', text: locationLabel })
+  for (const tag of bin.tags) {
+    if (tag.toLowerCase().includes(q)) matches.push({ field: 'Tag', text: tag })
+  }
+  for (const item of bin.items) {
+    if (item.toLowerCase().includes(q)) matches.push({ field: 'Item', text: item })
+  }
+  return matches
 }
 
 export function Home() {
@@ -82,21 +113,28 @@ export function Home() {
     }
   }, [])
 
+  // Bin + its resolved location path, computed once per data change so
+  // filtering, sorting, and match-highlighting all share the same value.
+  const rows = useMemo(
+    () => bins.map((bin) => ({ bin, locationLabel: locationPath(bin.location_id, locations) })),
+    [bins, locations],
+  )
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return bins
-    return bins.filter((bin) => {
-      const haystack = [bin.title, bin.description, bin.number, ...bin.tags, ...bin.items]
+    if (!q) return rows
+    return rows.filter(({ bin, locationLabel }) => {
+      const haystack = [bin.title, bin.description, bin.number, locationLabel, ...bin.tags, ...bin.items]
         .join(' ')
         .toLowerCase()
       return haystack.includes(q)
     })
-  }, [bins, query])
+  }, [rows, query])
 
   const sorted = useMemo(() => {
     const dirMul = sortDir === 'asc' ? 1 : -1
-    const rows = filtered.map((bin) => ({ bin, locationLabel: locationPath(bin.location_id, locations) }))
-    rows.sort((a, b) => {
+    const copy = [...filtered]
+    copy.sort((a, b) => {
       switch (sortField) {
         case 'location':
           return a.locationLabel.localeCompare(b.locationLabel) * dirMul
@@ -108,8 +146,8 @@ export function Home() {
           return binDisplayName(a.bin).localeCompare(binDisplayName(b.bin)) * dirMul
       }
     })
-    return rows.map((r) => r.bin)
-  }, [filtered, locations, sortField, sortDir])
+    return copy
+  }, [filtered, sortField, sortDir])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -205,8 +243,11 @@ export function Home() {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((bin) => {
+            {sorted.map(({ bin, locationLabel }) => {
               const goToBin = () => navigate(`/bin/${bin.id}`)
+              const matches = query.trim() ? findMatches(bin, locationLabel, query) : []
+              const shownMatches = matches.slice(0, MAX_SHOWN_MATCHES)
+              const extraCount = matches.length - shownMatches.length
               return (
                 <tr
                   key={bin.id}
@@ -220,9 +261,20 @@ export function Home() {
                   <td>
                     {binDisplayName(bin)}
                     {bin.number && bin.title && <div className="table-location">#{bin.number}</div>}
+                    {shownMatches.length > 0 && (
+                      <div className="search-matches">
+                        {shownMatches.map((m, i) => (
+                          <div className="search-match" key={i}>
+                            <span className="search-match-field">{m.field}:</span>{' '}
+                            {truncate(m.text, MATCH_SNIPPET_LENGTH)}
+                          </div>
+                        ))}
+                        {extraCount > 0 && <div className="search-match">+{extraCount} more match(es)</div>}
+                      </div>
+                    )}
                   </td>
                   <td data-label="Location" className="table-location">
-                    {locationPath(bin.location_id, locations)}
+                    {locationLabel}
                   </td>
                   <td data-label="Tags">
                     {bin.tags.length > 0 ? (
