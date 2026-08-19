@@ -277,6 +277,13 @@ button {
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
   border-radius: 999px;
+  font-size: 1rem;
+}
+
+.photo-thumb-star {
+  top: 4px;
+  right: auto !important;
+  left: 4px;
 }
 
 .item-row {
@@ -468,6 +475,15 @@ button {
 .sort-header:hover,
 .sort-header:focus-visible {
   text-decoration: underline;
+}
+
+.main-photo-thumb {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: pointer;
 }
 
 .search-matches {

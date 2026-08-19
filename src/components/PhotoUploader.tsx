@@ -2,16 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PhotoLightbox } from './PhotoLightbox'
 
-const BUCKET = 'bin-photos'
+export const PHOTO_BUCKET = 'bin-photos'
 
 export function PhotoUploader({
   binId,
   photos,
   onChange,
+  mainPhoto,
+  onMainPhotoChange,
 }: {
   binId: string
   photos: string[]
   onChange: (photos: string[]) => void
+  mainPhoto: string | null
+  onMainPhotoChange: (path: string | null) => void
 }) {
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
@@ -26,7 +30,7 @@ export function PhotoUploader({
 
     Promise.all(
       missing.map(async (path) => {
-        const { data, error: downloadError } = await supabase.storage.from(BUCKET).download(path)
+        const { data, error: downloadError } = await supabase.storage.from(PHOTO_BUCKET).download(path)
         if (downloadError || !data) return null
         return [path, URL.createObjectURL(data)] as const
       }),
@@ -54,13 +58,15 @@ export function PhotoUploader({
       for (const file of Array.from(fileList)) {
         const ext = file.name.split('.').pop() || 'jpg'
         const path = `${binId}/${crypto.randomUUID()}.${ext}`
-        const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
+        const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
           contentType: file.type || 'image/jpeg',
         })
         if (uploadError) throw uploadError
         newPaths.push(path)
       }
       onChange([...photos, ...newPaths])
+      // First photo(s) added to an empty bin become the main photo by default.
+      if (!mainPhoto && newPaths.length) onMainPhotoChange(newPaths[0])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Photo upload failed')
     } finally {
@@ -71,35 +77,56 @@ export function PhotoUploader({
 
   const removePhoto = async (path: string) => {
     onChange(photos.filter((p) => p !== path))
-    await supabase.storage.from(BUCKET).remove([path])
+    if (mainPhoto === path) onMainPhotoChange(null)
+    await supabase.storage.from(PHOTO_BUCKET).remove([path])
   }
 
   return (
     <div>
       {photos.length > 0 && (
         <div className="photo-grid">
-          {photos.map((path) => (
-            <div
-              className="photo-thumb"
-              key={path}
-              onClick={() => urls[path] && setExpandedPath(path)}
-              role={urls[path] ? 'button' : undefined}
-              tabIndex={urls[path] ? 0 : undefined}
-            >
-              {urls[path] ? <img src={urls[path]} alt="Bin contents — tap to expand" /> : null}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  removePhoto(path)
-                }}
-                aria-label="Remove photo"
+          {photos.map((path) => {
+            const isMain = mainPhoto === path
+            return (
+              <div
+                className="photo-thumb"
+                key={path}
+                onClick={() => urls[path] && setExpandedPath(path)}
+                role={urls[path] ? 'button' : undefined}
+                tabIndex={urls[path] ? 0 : undefined}
               >
-                ✕
-              </button>
-            </div>
-          ))}
+                {urls[path] ? <img src={urls[path]} alt="Bin contents — tap to expand" /> : null}
+                <button
+                  type="button"
+                  className="photo-thumb-star"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMainPhotoChange(isMain ? null : path)
+                  }}
+                  aria-label={isMain ? 'Unset as main photo' : 'Set as main photo'}
+                  title={isMain ? 'Main photo — tap to unset' : 'Set as main photo'}
+                >
+                  {isMain ? '⭐' : '☆'}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    removePhoto(path)
+                  }}
+                  aria-label="Remove photo"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
         </div>
+      )}
+      {photos.length > 0 && (
+        <p className="muted" style={{ fontSize: '0.8rem', marginTop: 6 }}>
+          ⭐ marks the main photo — shown on the Search page. Tap the star on any photo to change it.
+        </p>
       )}
 
       {expandedPath && urls[expandedPath] && (

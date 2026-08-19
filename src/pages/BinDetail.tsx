@@ -105,7 +105,16 @@ export function BinDetail() {
     if (bin.photos.length) {
       await supabase.storage.from('bin-photos').remove(bin.photos)
     }
-    await patch({ number: '', title: '', description: '', tags: [], items: [], photos: [], location_id: null })
+    await patch({
+      number: '',
+      title: '',
+      description: '',
+      tags: [],
+      items: [],
+      photos: [],
+      main_photo: null,
+      location_id: null,
+    })
     setNumberDraft('')
     setConfirmingEmpty(false)
   }
@@ -202,7 +211,13 @@ export function BinDetail() {
       </div>
 
       <label>Photos</label>
-      <PhotoUploader binId={bin.id} photos={bin.photos} onChange={(photos) => patch({ photos })} />
+      <PhotoUploader
+        binId={bin.id}
+        photos={bin.photos}
+        onChange={(photos) => patch({ photos })}
+        mainPhoto={bin.main_photo}
+        onMainPhotoChange={(main_photo) => patch({ main_photo })}
+      />
 
       <label>QR code</label>
       <QRCodeCard binId={bin.id} number={bin.number} title={bin.title} />
