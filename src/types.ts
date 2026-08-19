@@ -13,6 +13,7 @@ export interface BinRow {
   tags: string[]
   items: string[]
   photos: string[]
+  main_photo: string | null
   location_id: string | null
   created_at: string
   updated_at: string

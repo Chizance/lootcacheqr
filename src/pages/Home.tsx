@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
+import { PhotoLightbox } from '../components/PhotoLightbox'
+import { PHOTO_BUCKET } from '../components/PhotoUploader'
 import { locationPath } from '../lib/locations'
 import type { BinRow, LocationRow } from '../types'
 
@@ -74,6 +76,8 @@ export function Home() {
   const [scanError, setScanError] = useState('')
   const [sortField, setSortField] = useState<SortField>('bin')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [mainPhotoUrls, setMainPhotoUrls] = useState<Record<string, string>>({})
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -119,6 +123,34 @@ export function Home() {
     () => bins.map((bin) => ({ bin, locationLabel: locationPath(bin.location_id, locations) })),
     [bins, locations],
   )
+
+  // Download thumbnails for whichever main photos we haven't fetched yet.
+  useEffect(() => {
+    let cancelled = false
+    const paths = [...new Set(bins.map((b) => b.main_photo).filter((p): p is string => !!p))]
+    const missing = paths.filter((p) => !mainPhotoUrls[p])
+    if (missing.length === 0) return
+
+    Promise.all(
+      missing.map(async (path) => {
+        const { data } = await supabase.storage.from(PHOTO_BUCKET).download(path)
+        if (!data) return null
+        return [path, URL.createObjectURL(data)] as const
+      }),
+    ).then((entries) => {
+      if (cancelled) return
+      const next: Record<string, string> = {}
+      for (const entry of entries) {
+        if (entry) next[entry[0]] = entry[1]
+      }
+      if (Object.keys(next).length) setMainPhotoUrls((prev) => ({ ...prev, ...next }))
+    })
+
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bins])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -259,19 +291,34 @@ export function Home() {
                   }}
                 >
                   <td>
-                    {binDisplayName(bin)}
-                    {bin.number && bin.title && <div className="table-location">#{bin.number}</div>}
-                    {shownMatches.length > 0 && (
-                      <div className="search-matches">
-                        {shownMatches.map((m, i) => (
-                          <div className="search-match" key={i}>
-                            <span className="search-match-field">{m.field}:</span>{' '}
-                            {truncate(m.text, MATCH_SNIPPET_LENGTH)}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      {bin.main_photo && mainPhotoUrls[bin.main_photo] && (
+                        <img
+                          src={mainPhotoUrls[bin.main_photo]}
+                          alt=""
+                          className="main-photo-thumb"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExpandedPhoto(mainPhotoUrls[bin.main_photo as string])
+                          }}
+                        />
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        {binDisplayName(bin)}
+                        {bin.number && bin.title && <div className="table-location">#{bin.number}</div>}
+                        {shownMatches.length > 0 && (
+                          <div className="search-matches">
+                            {shownMatches.map((m, i) => (
+                              <div className="search-match" key={i}>
+                                <span className="search-match-field">{m.field}:</span>{' '}
+                                {truncate(m.text, MATCH_SNIPPET_LENGTH)}
+                              </div>
+                            ))}
+                            {extraCount > 0 && <div className="search-match">+{extraCount} more match(es)</div>}
                           </div>
-                        ))}
-                        {extraCount > 0 && <div className="search-match">+{extraCount} more match(es)</div>}
+                        )}
                       </div>
-                    )}
+                    </div>
                   </td>
                   <td data-label="Location" className="table-location">
                     {locationLabel}
@@ -298,6 +345,8 @@ export function Home() {
           </tbody>
         </table>
       )}
+
+      {expandedPhoto && <PhotoLightbox src={expandedPhoto} onClose={() => setExpandedPhoto(null)} />}
     </Layout>
   )
 }
