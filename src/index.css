@@ -470,6 +470,30 @@ button {
   text-decoration: underline;
 }
 
+.search-matches {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-match {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: var(--accent-light);
+  border-radius: 6px;
+  padding: 3px 8px;
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.search-match-field {
+  font-weight: 700;
+  color: var(--accent);
+}
+
 .bin-table tbody tr {
   background: var(--surface);
   box-shadow: var(--shadow);
