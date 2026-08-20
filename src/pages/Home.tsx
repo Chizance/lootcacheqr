@@ -197,7 +197,7 @@ export function Home() {
     if (match) {
       setShowScanner(false)
       setScanError('')
-      navigate(`/bin/${match[1]}`)
+      navigate(`/bin/${match[1]}`, { state: { binIds: sorted.map((r) => r.bin.id) } })
     } else {
       setScanError("That doesn't look like a LootcacheQR bin code — try again or scan a different code.")
     }
@@ -276,7 +276,8 @@ export function Home() {
           </thead>
           <tbody>
             {sorted.map(({ bin, locationLabel }) => {
-              const goToBin = () => navigate(`/bin/${bin.id}`)
+              const goToBin = () =>
+                navigate(`/bin/${bin.id}`, { state: { binIds: sorted.map((r) => r.bin.id) } })
               const matches = query.trim() ? findMatches(bin, locationLabel, query) : []
               const shownMatches = matches.slice(0, MAX_SHOWN_MATCHES)
               const extraCount = matches.length - shownMatches.length
