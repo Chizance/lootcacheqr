@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
 import { TagInput } from '../components/TagInput'
@@ -14,6 +14,17 @@ import type { BinRow, LocationRow } from '../types'
 export function BinDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  // The ordered list of bin IDs from wherever we navigated here from (the
+  // Search page's current sort/filter, or a QR scan) — lets Previous/Next
+  // continue through exactly the list you were browsing. Absent if you
+  // landed here directly (a printed QR code, a bookmark, a page refresh),
+  // in which case there's no "list" to move through, so the controls just
+  // don't render rather than guessing at some other order.
+  const binIds = (location.state as { binIds?: string[] } | null)?.binIds
+  const binIndex = binIds && id ? binIds.indexOf(id) : -1
+  const prevBinId = binIds && binIndex > 0 ? binIds[binIndex - 1] : null
+  const nextBinId = binIds && binIndex !== -1 && binIndex < binIds.length - 1 ? binIds[binIndex + 1] : null
   const [bin, setBin] = useState<BinRow | null>(null)
   const [locations, setLocations] = useState<LocationRow[]>([])
   const [notFound, setNotFound] = useState(false)
@@ -133,6 +144,11 @@ export function BinDetail() {
     }
   }
 
+  const goToAdjacentBin = (targetId: string | null) => {
+    if (!targetId) return
+    navigate(`/bin/${targetId}`, { state: { binIds } })
+  }
+
   const deleteBin = async () => {
     if (!id || !bin) return
     if (bin.photos.length) {
@@ -163,6 +179,32 @@ export function BinDetail() {
       <p className="muted" style={{ marginTop: -8, marginBottom: 8, fontSize: '0.8rem' }}>
         {saving ? 'Saving…' : 'Synced'}
       </p>
+
+      {binIds && binIndex !== -1 && (
+        <div className="bin-nav">
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={() => goToAdjacentBin(prevBinId)}
+            disabled={!prevBinId}
+            aria-label="Previous bin"
+          >
+            ◀ Prev
+          </button>
+          <span className="muted" style={{ fontSize: '0.85rem' }}>
+            {binIndex + 1} of {binIds.length}
+          </span>
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={() => goToAdjacentBin(nextBinId)}
+            disabled={!nextBinId}
+            aria-label="Next bin"
+          >
+            Next ▶
+          </button>
+        </div>
+      )}
 
       <label htmlFor="number">Bin number / name</label>
       <input

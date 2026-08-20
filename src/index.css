@@ -345,6 +345,29 @@ button {
   margin-bottom: 2px;
 }
 
+.bin-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--brand-light);
+  border-radius: 12px;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+}
+
+.bin-nav .btn-icon {
+  color: var(--brand-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: auto;
+  padding: 0 8px;
+}
+
+.bin-nav .btn-icon:disabled {
+  opacity: 0.35;
+}
+
 .location-tree-item {
   display: flex;
   align-items: center;
