@@ -2,12 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// GitHub Pages serves this repo at https://chizance.github.io/lootcacheqr/
-// so every asset URL needs that subpath prefix — Vite's `base` handles this everywhere
-// except the manifest, which we set separately below with the same prefix.
-// (This whole BASE_PATH goes away in favor of '/' once the custom domain,
-// lootcacheqr.is-a.dev, is live — see docs/SETUP.md.)
-const BASE_PATH = '/lootcacheqr/'
+// GitHub Pages serves a repo at /repo-name/, so every asset URL needs that
+// subpath prefix. VITE_BASE_PATH is injected by the Actions workflow from the
+// actual repo name (see deploy.yml), so forks get the right path automatically.
+// Falls back to /lootcacheqr/ for local dev and for the original repo.
+const BASE_PATH = process.env.VITE_BASE_PATH ?? '/lootcacheqr/'
 
 // https://vite.dev/config/
 export default defineConfig({

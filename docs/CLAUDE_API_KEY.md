@@ -75,7 +75,7 @@ supabase functions deploy extract-items
 
 This uploads `supabase/functions/extract-items/index.ts` to Supabase. That function reads `ANTHROPIC_API_KEY` from the secret you just set (`Deno.env.get('ANTHROPIC_API_KEY')` — see the code) and uses it to call Claude.
 
-The function also requires the caller to be logged in (Supabase verifies your app's session automatically before running it — this is the default, and the function is deployed without disabling that check). So even someone who found your Supabase project URL couldn't trigger Claude calls on your bill without one of your two accounts' credentials.
+The function also requires the caller to be logged in (Supabase verifies your app's session automatically before running it — this is the default, and the function is deployed without disabling that check). So even someone who found your Supabase project URL couldn't trigger Claude calls on your bill without valid account credentials.
 
 ## Confirming it's never exposed
 

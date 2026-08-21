@@ -33,11 +33,13 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # These come from repo Settings > Secrets and variables > Actions.
+          # VITE_SUPABASE_* come from repo Settings > Secrets and variables > Actions.
           # See docs/SETUP.md for how to add them. They are safe to expose in
           # the built bundle — see .env.example for why.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Auto-derived from the repo name so forks work under any name.
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3
