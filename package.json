@@ -1,7 +1,12 @@
 {
   "name": "lootcacheqr",
-  "private": true,
   "version": "0.0.0",
+  "author": "chizance (https://github.com/chizance)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chizance/lootcacheqr"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

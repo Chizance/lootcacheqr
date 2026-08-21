@@ -7,7 +7,7 @@ Every bin gets a QR code automatically — there's nothing to set up. Here's how
 Each bin has a permanent ID the moment it's created. Its QR code encodes a URL like:
 
 ```
-https://chizance.github.io/lootcacheqr/#/bin/<bin-id>
+https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/#/bin/<bin-id>
 ```
 
 ## Scanning a code — use the in-app scanner

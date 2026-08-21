@@ -60,9 +60,9 @@ create trigger bins_set_updated_at
   execute function set_updated_at();
 
 -- ---------------------------------------------------------------------------
--- Row Level Security — this app has exactly two trusted users (you + your
--- partner), both signing in with a real Supabase account, so the policy is
--- simply "any signed-in user can do anything." No public/anonymous access.
+-- Row Level Security — any signed-in user can read and write everything.
+-- Access is controlled by who has an account, not by per-row ownership.
+-- No public/anonymous access.
 -- ---------------------------------------------------------------------------
 alter table locations enable row level security;
 alter table bins enable row level security;

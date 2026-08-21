@@ -34,19 +34,20 @@ None of this costs anything except the Claude API calls you explicitly trigger b
 3. Leave **Public bucket** switched **off** — keep it private. The app accesses it through your logged-in session, not a public URL.
 4. Create it. The storage access policies for this bucket were already created by `schema.sql` in the previous step (the bottom section of that file).
 
-### Lock down who can sign up (recommended)
+### Managing who can sign up
 
-By default, the login screen's "Create account" link lets **anyone who finds your site's URL** self-register — and once logged in, they'd have full read/write access to your entire inventory (see "What is Row Level Security" note below for why). Since your Project URL and anon key are visible to anyone who views your site's source, "nobody else knows the URL" isn't real protection.
+By default, the login screen's "Create account" link lets anyone self-register. Every logged-in account gets full read/write access to the shared inventory — there's no per-user restriction, which is intentional (see the RLS note below).
 
-The fix is to disable public self-signup entirely and create accounts yourself from the dashboard instead:
+**If you want open self-signup** (easiest for sharing with friends): leave Supabase's default settings alone. Share your app URL and tell people to tap "Create account" on the login screen. They pick their own email and password and are in immediately.
 
-1. Go to **Authentication > Providers > Email**.
-2. Turn off **"Allow new users to sign up."** Save.
-3. Go to **Authentication > Users > Add user > Create new user**.
-4. Enter the email and a password for yourself, and check **"Auto Confirm User"** (this skips the confirmation-email step entirely — no need for the SQL workaround from earlier).
-5. Repeat for your partner (and anyone else you deliberately choose to grant access to later).
+**If you want to control exactly who has access**: disable self-signup and create accounts manually from the dashboard.
 
-With this on, the "Create account" link in the app will just fail with an error if anyone else tries it — which is the point.
+- Go to **Authentication > Providers > Email** and turn off **"Allow new users to sign up."** Save.
+- Go to **Authentication > Users > Add user > Create new user**.
+- Enter an email and password for each person, and check **"Auto Confirm User"** (skips the email confirmation step).
+- Repeat for each person you want to add.
+
+With signup disabled, the "Create account" link in the app will fail for anyone not already in your user list. To add someone later, just go back to **Authentication > Users** in the dashboard and create another account.
 
 ### A few more one-time security toggles
 
@@ -55,7 +56,7 @@ Two more quick wins in the dashboard, both flagged by Supabase's built-in securi
 - **"Leaked password protection"** — this one turns out to be a paid-plan-only feature on Supabase (not available on the free tier), so skip it. Not worth upgrading for on a personal 2-person app — just use a normal, non-trivial password for each account and this is a non-issue in practice.
 - If you already ran `supabase/schema.sql` before this doc was updated, **re-run it** (SQL Editor, same as before — it's safe to run multiple times) to pick up a fix for a flagged database function that didn't pin its search path.
 
-**About the "RLS Policy Always True" warning:** the advisor will also flag that `bins` and `locations` allow any signed-in user to read/write any row, with no per-user restriction. This one's intentional, not a bug — the whole point of this app is that you and your partner (or whoever you explicitly add above) share one inventory. Supabase's linter is a generic scanner tuned for multi-tenant apps, where that pattern usually *is* a mistake; here, combined with closed signup, "any logged-in user has full access" is exactly the intended trust model, so it's safe to leave as-is. If you ever add someone you don't want having full edit access, that's the point where this policy would need to become more restrictive.
+**About the "RLS Policy Always True" warning:** the advisor will also flag that `bins` and `locations` allow any signed-in user to read/write any row, with no per-user restriction. This one's intentional, not a bug — the whole point of this app is that everyone with an account shares one inventory. Supabase's linter is a generic scanner tuned for multi-tenant apps, where that pattern usually *is* a mistake; here, "any logged-in user has full access" is exactly the intended trust model, so it's safe to leave as-is. If you ever need to give someone view-only access, that's the point where this policy would need to become more restrictive.
 
 ---
 
@@ -107,7 +108,7 @@ The repo already has a GitHub Actions workflow ([`.github/workflows/deploy.yml`]
 Once you push your first commit (see [docs/GIT_WORKFLOW.md](./GIT_WORKFLOW.md)), go to the **Actions** tab on GitHub to watch the "Deploy to GitHub Pages" workflow run. When it finishes, your app is live at:
 
 ```
-https://chizance.github.io/lootcacheqr/
+https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/
 ```
 
 Open that on your phone and **add it to your home screen** (Safari: Share > Add to Home Screen; Android Chrome: menu > Install app / Add to Home screen) — that's what makes it launch full-screen like a real app instead of opening in a browser tab.

@@ -8,7 +8,7 @@
 //
 // Deploy with: supabase functions deploy extract-items
 // This function requires a logged-in Supabase session (the default —
-// do NOT deploy with --no-verify-jwt), so only your two accounts can call it.
+// do NOT deploy with --no-verify-jwt), so only authenticated accounts can call it.
 
 import Anthropic from 'npm:@anthropic-ai/sdk'
 
