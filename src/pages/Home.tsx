@@ -204,7 +204,7 @@ export function Home() {
   }
 
   return (
-    <Layout title="LootcacheQR">
+    <Layout title="Search">
       <div className="field-row">
         <input
           type="search"
