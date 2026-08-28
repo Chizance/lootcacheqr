@@ -1,44 +1,45 @@
-# 📦 LootcacheQR
+# LootcacheQR
 
-A personal PWA for tracking what's in your storage bins. It's installable to your phone's home screen, searchable, backed by QR-coded stickers on each physical bin.
+A free app for tracking what's in your storage bins. Runs on your phone like a real app, syncs across everyone in your household, and uses QR-coded stickers so you can scan any bin to jump straight to its contents.
 
-- **Multi-device sync** - everyone with an account can view and edit from their phones in real time (Supabase).
-- **Search** - find an item by keyword and see which bin and location it's in.
-- **Nested locations** - define your own hierarchy (e.g. `Backyard > Shelf A > Bottom Row`).
-- **QR codes** - every bin gets one automatically; scan it to jump straight to that bin's record.
-- **Reusable bins** - empty a bin's contents while keeping the same sticker for next season.
-- **Optional Claude-powered photo scan** - snap a photo of an open box and get a draft item list to review and edit.
+- **Search** - find any item by keyword and see exactly which bin and shelf it's in.
+- **QR codes** - stick one on each bin; scan it to open that bin instantly.
+- **Nested locations** - organize by room, shelf, or whatever makes sense to you.
+- **Shared inventory** - everyone with an account sees the same bins in real time.
+- **Reusable bins** - clear a bin's contents for next season without reprinting anything.
+- **Optional AI photo scan** - photograph an open box and get a draft item list to review.
+
+---
+
+## Get your own copy
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/chizance/lootcacheqr)
+
+See [QUICKSTART.md](./QUICKSTART.md) for step-by-step instructions - no coding or installs required, takes about 20 minutes. The button above handles deployment once you've set up your Supabase database.
+
+---
 
 ## Docs
 
-- [docs/SETUP.md](./docs/SETUP.md) - full setup walkthrough: Supabase, GitHub Pages, everything
-- [docs/CLAUDE_API_KEY.md](./docs/CLAUDE_API_KEY.md) - configuring your Anthropic API key securely
-- [docs/QR_CODES.md](./docs/QR_CODES.md) - generating and printing bin QR codes
-- [docs/GIT_WORKFLOW.md](./docs/GIT_WORKFLOW.md) - commit/push basics for this repo
+- [QUICKSTART.md](./QUICKSTART.md) - start here, no experience needed
+- [docs/SETUP.md](./docs/SETUP.md) - full reference and GitHub Pages alternative
+- [docs/CLAUDE_API_KEY.md](./docs/CLAUDE_API_KEY.md) - optional AI photo scanning setup
+- [docs/QR_CODES.md](./docs/QR_CODES.md) - how to print and use bin QR codes
+- [docs/GIT_WORKFLOW.md](./docs/GIT_WORKFLOW.md) - for developers: commit and push basics
 
-## Tech stack
+---
 
-- **Frontend:** React + TypeScript + Vite, deployed as a static PWA to GitHub Pages
-- **Backend:** Supabase (Postgres + Auth + Storage + Realtime + one Edge Function)
-- **AI:** Claude Sonnet 5 via a Supabase Edge Function (key never touches the browser)
-
-## Local development
+## For developers
 
 ```
 npm install
-cp .env.example .env   # then fill in your Supabase URL + anon key
+cp .env.example .env   # fill in your Supabase URL and anon key
 npm run dev
 ```
 
-See [docs/SETUP.md](./docs/SETUP.md) if you haven't created your Supabase project yet.
+Stack: React + TypeScript + Vite, deployed to Netlify or GitHub Pages. Backend is Supabase (Postgres + Auth + Storage + Realtime). Optional AI feature uses Claude Sonnet via a Supabase Edge Function.
 
-## Deploying
-
-Pushing to `main` triggers an automatic build + deploy via GitHub Actions (see `.github/workflows/deploy.yml`). Live at:
-
-```
-https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/
-```
+---
 
 ## Credits
 

@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Netlify serves at the root, so no subpath prefix needed.
+  VITE_BASE_PATH = "/"
+
+# SPA routing: send all requests to index.html so the app handles navigation.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# These two fields appear as a form when someone clicks the "Deploy to Netlify" button.
+# Fill them in with your Supabase values before clicking Deploy.
+[template.environment]
+  VITE_SUPABASE_URL = "Your Supabase Project URL (from Project Settings > Data API)"
+  VITE_SUPABASE_ANON_KEY = "Your Supabase anon public key (from Project Settings > Data API)"
